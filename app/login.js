@@ -1,4 +1,4 @@
-const app = document.getElementById("app");
+export function renderLogin(app, renderApp) {
 
 
 //------------------ login page -------------------
@@ -71,15 +71,14 @@ form.addEventListener("submit", async (e) => {
     }
 
     const data = await res.json();
-
     console.log("JWT:", data);
-
     // save token
     localStorage.setItem("token", data);
-
-    alert("Login success ✅");
+    
+    renderApp();
 
   } catch (err) {
     errorMsg.style.display = "block";
   }
 });
+}
