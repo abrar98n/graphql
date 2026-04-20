@@ -36,9 +36,7 @@ app.innerHTML = `
 
         <button type="submit" class="login-btn">Login</button>
 
-        <p class="login-error" id="login-error">
-          Invalid username, email, or password
-        </p>
+       <p class="login-error" id="login-error"></p>
       </form>
     </section>
   </main>
