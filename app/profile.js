@@ -408,7 +408,7 @@ level: transaction(
 
           <div class="profile-user-info">
             <p><strong>User ID:</strong> ${user?.id ?? "N/A"}</p>
-            <p><strong>Login:</strong> ${user?.login ?? "N/A"}</p>
+            <p><strong>Username:</strong> ${user?.login ?? "N/A"}</p>
           </div>
 
           <div class="stats-grid">
