@@ -86,13 +86,15 @@ function generateLineChart(data) {
 
   const width = 700;
   const height = 260;
-  const padding = 40;
+  const padding = 40;const paddingLeft = 70;
+  const paddingRight = 40;
+  const paddingBottom = 40;  
   const chartHeight = 150;
   const chartBottom = height - padding;
   const chartTop = chartBottom - chartHeight;
 
   const maxValue = Math.max(...data.map((d) => d.amount), 1);
-  const stepX = data.length > 1 ? (width - padding * 2) / (data.length - 1) : 0;
+  const stepX = (width - paddingLeft - paddingRight) / (data.length - 1);
 
   // Create line points
   const points = data.map((item, i) => {
@@ -127,12 +129,14 @@ function generateLineChart(data) {
     `;
   }).join("");
 
-  // Horizontal grid lines
+
   const gridLines = 4;
   let grid = "";
+  let yLabels = "";
 
-  for (let i = 0; i <= gridLines; i++) {
-    const y = chartTop + (chartHeight / gridLines) * i;
+for (let i = 0; i <= gridLines; i++) {
+  const value = maxValue - (maxValue / gridLines) * i;
+  const y = chartTop + (chartHeight / gridLines) * i;
 
     grid += `
       <line
@@ -144,6 +148,19 @@ function generateLineChart(data) {
         stroke-width="1"
       />
     `;
+
+    yLabels += `
+  <text
+    x="${paddingLeft - 10}"
+    y="${y + 4}"
+    text-anchor="end"
+    font-size="10"
+    fill="#98a2c3"
+  >
+    ${formatXP(value)}
+  </text>
+`;
+
   }
 
   return `
@@ -156,6 +173,7 @@ function generateLineChart(data) {
       </defs>
 
       ${grid}
+      ${yLabels}
 
       <line
         x1="${padding}"
