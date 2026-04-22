@@ -1,593 +1,73 @@
-function formatXP(num) {
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1).replace(".0", "") + " KB";
-  }
-  return num + " B";
-}
+import { renderRadarChart } from "./functions/radar.js";
+import { PROFILE_QUERY } from "./functions/profileQuery.js";
+import { mapTimelineData } from "./functions/mapTimelineData.js";
+import { mapTopSkills } from "./functions/mapTopSkills.js";
+import { profileTemplate } from "./functions/profileTemplate.js";
+import { mapChartData } from "./functions/mapChartData.js";
 
-function generateBarChart(data) {
-  if (!data.length) {
-    return `<p class="empty-chart-text">No chart data available.</p>`;
-  }
-
-  const width = 700;
-  const height = 260;
-  const padding = 30;
-  const barGap = 20;
-  const maxValue = Math.max(...data.map((item) => item.amount), 1);
-  const barWidth = (width - padding * 2 - barGap * (data.length - 1)) / data.length;
-
-  const bars = data
-    .map((item, index) => {
-      const barHeight = (item.amount / maxValue) * 150;
-      const x = padding + index * (barWidth + barGap);
-      const y = height - padding - barHeight;
-
-      return `
-        <g>
-          <rect
-            x="${x}"
-            y="${y}"
-            width="${barWidth}"
-            height="${barHeight}"
-            rx="10"
-            fill="url(#barGradient)"
-          />
-          <text
-            x="${x + barWidth / 2}"
-            y="${height - 10}"
-            text-anchor="middle"
-            font-size="11"
-            fill="#98a2c3"
-          >
-            ${item.name}
-          </text>
-          <text
-            x="${x + barWidth / 2}"
-            y="${y - 8}"
-            text-anchor="middle"
-            font-size="11"
-            fill="#f5f7ff"
-          >
-            ${formatXP(item.amount)}
-          </text>
-        </g>
-      `;
-    })
-    .join("");
-
-  return `
-    <svg viewBox="0 0 ${width} ${height}" class="chart-svg" role="img" aria-label="XP by project bar chart">
-      <defs>
-        <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#7c3aed" />
-          <stop offset="100%" stop-color="#4f8cff" />
-        </linearGradient>
-      </defs>
-
-      <line
-        x1="${padding}"
-        y1="${height - padding}"
-        x2="${width - padding}"
-        y2="${height - padding}"
-        stroke="rgba(255,255,255,0.12)"
-      />
-
-      ${bars}
-    </svg>
-  `;
-}
-
-
-function generateLineChart(data) {
-  if (!data.length) {
-    return `<p class="empty-chart-text">No timeline data.</p>`;
-  }
-
-  const width = 700;
-  const height = 260;
-  const padding = 40;const paddingLeft = 70;
-  const paddingRight = 40;
-  const paddingBottom = 40;  
-  const chartHeight = 150;
-  const chartBottom = height - padding;
-  const chartTop = chartBottom - chartHeight;
-
-  const maxValue = Math.max(...data.map((d) => d.amount), 1);
-  const stepX = (width - paddingLeft - paddingRight) / (data.length - 1);
-
-  // Create line points
-  const points = data.map((item, i) => {
-    const x = padding + i * stepX;
-    const y = chartBottom - (item.amount / maxValue) * chartHeight;
-    return `${x},${y}`;
-  });
-
-  // Draw dots only
-  const circles = data.map((item, i) => {
-    const x = padding + i * stepX;
-    const y = chartBottom - (item.amount / maxValue) * chartHeight;
-
-    return `
-      <circle cx="${x}" cy="${y}" r="4" fill="#a5b4fc" />
-    `;
-  }).join("");
-
-  // X labels
-  const labels = data.map((item, i) => {
-    const x = padding + i * stepX;
-    return `
-      <text
-        x="${x}"
-        y="${height - 10}"
-        text-anchor="middle"
-        font-size="10"
-        fill="#98a2c3"
-      >
-        ${item.label}
-      </text>
-    `;
-  }).join("");
-
-
-  const gridLines = 4;
-  let grid = "";
-  let yLabels = "";
-
-for (let i = 0; i <= gridLines; i++) {
-  const value = maxValue - (maxValue / gridLines) * i;
-  const y = chartTop + (chartHeight / gridLines) * i;
-
-    grid += `
-      <line
-        x1="${padding}"
-        y1="${y}"
-        x2="${width - padding}"
-        y2="${y}"
-        stroke="rgba(255,255,255,0.08)"
-        stroke-width="1"
-      />
-    `;
-
-    yLabels += `
-  <text
-    x="${paddingLeft - 10}"
-    y="${y + 4}"
-    text-anchor="end"
-    font-size="10"
-    fill="#98a2c3"
-  >
-    ${formatXP(value)}
-  </text>
-`;
-
-  }
-
-  return `
-    <svg viewBox="0 0 ${width} ${height}" class="chart-svg" role="img" aria-label="XP over time line chart">
-      <defs>
-        <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#7c3aed" />
-          <stop offset="100%" stop-color="#4f8cff" />
-        </linearGradient>
-      </defs>
-
-      ${grid}
-      ${yLabels}
-
-      <line
-        x1="${padding}"
-        y1="${chartTop}"
-        x2="${padding}"
-        y2="${chartBottom}"
-        stroke="rgba(255,255,255,0.12)"
-        stroke-width="1"
-      />
-
-      <line
-        x1="${padding}"
-        y1="${chartBottom}"
-        x2="${width - padding}"
-        y2="${chartBottom}"
-        stroke="rgba(255,255,255,0.12)"
-        stroke-width="1"
-      />
-
-      <polyline
-        fill="none"
-        stroke="url(#lineGradient)"
-        stroke-width="3"
-        points="${points.join(" ")}"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-
-      ${circles}
-      ${labels}
-    </svg>
-  `;
-}
-
+const GRAPHQL_URL = "https://learn.reboot01.com/api/graphql-engine/v1/graphql";
 
 export async function renderProfile(app, renderApp) {
+  const token = localStorage.getItem("token");
+  const query = PROFILE_QUERY;
 
-    const token = localStorage.getItem("token");
+  let user = null;
+  let totalXP = null;
+  let level = null;
+  let auditUp = null;
+  let auditDown = null;
+  let auditRatio = null;
+  let chartData = [];
+  let timelineData = [];
+  let topSkills = [];
 
-    const query = `
-    {
-    user {
-        id
-        login
-    }
-
-    transaction_aggregate(where: { type: { _eq: "xp" } }) {
-        aggregate {
-        sum {
-            amount
-        }
-        }
-    }
-
-level: transaction(
-  where: { type: { _eq: "level" } }
-  order_by: { amount: desc }
-  limit: 1
-) {
-  amount
-}
-
-    auditRatio: transaction_aggregate(where: { type: { _eq: "up" } }) {
-        aggregate {
-        sum {
-            amount
-        }
-        }
-    }
-
-    auditDown: transaction_aggregate(where: { type: { _eq: "down" } }) {
-        aggregate {
-        sum {
-            amount
-           }
-          }
-        }
-
-    xpTransactions: transaction(
-    where: { type: { _eq: "xp" } }
-    order_by: { amount: desc }
-    limit: 6
-    ) {
-    amount
-    path
-    }
-
-    xpTimeline: transaction(
-    where: { type: { _eq: "xp" } }
-    order_by: { createdAt: asc }
-    ) {
-    amount
-    createdAt
-    }
-
-    skills: transaction(
-    where: { type: { _like: "skill_%" } }
-    order_by: { amount: desc }
-    ) {
-    type
-    amount
-    }
-    
-  }
-`;
-
-    let user = null;
-    let totalXP= null;
-    let level = null;
-    let auditUp = null;
-    let auditDown = null;
-    let auditRatio = null;
-    let chartData = [];
-    let timelineData = [];
-    let topSkills = [];
-
-
-    try {
-    const res = await fetch("https://learn.reboot01.com/api/graphql-engine/v1/graphql", {
-        method: "POST",
-        headers: {
+  try {
+    const res = await fetch(GRAPHQL_URL, {
+      method: "POST",
+      headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ query }),
+      },
+      body: JSON.stringify({ query }),
     });
 
+    const result = await res.json();
+    const data = result.data;
 
+    console.log("GRAPHQL DATA:", data);
 
-      const result = await res.json();
-      const data = result.data;
+    user = data?.user?.[0];
+    totalXP = data?.transaction_aggregate?.aggregate?.sum?.amount || 0;
+    level = data?.level?.[0]?.amount || 0;
+    auditUp = data?.auditRatio?.aggregate?.sum?.amount ?? 0;
+    auditDown = data?.auditDown?.aggregate?.sum?.amount ?? 0;
+    auditRatio = auditDown > 0 ? (auditUp / auditDown).toFixed(2) : "0.00";
 
-      console.log("GRAPHQL DATA:", data);
+    chartData = mapChartData(data?.xpTransactions || []);
+    console.log("CHART DATA:", chartData);
 
-      user = data?.user?.[0];
-      totalXP = data?.transaction_aggregate?.aggregate?.sum?.amount || 0;
-      level = data?.level?.[0]?.amount || 0;
-      auditUp = data?.auditRatio?.aggregate?.sum?.amount ?? 0;
-      auditDown = data?.auditDown?.aggregate?.sum?.amount ?? 0;
-      auditRatio = auditDown > 0 ? (auditUp / auditDown).toFixed(2) : "0.00";
+    timelineData = mapTimelineData(data?.xpTimeline || []);
+    console.log("TIMELINE DATA:", timelineData);
 
-      const xpTransactions = data?.xpTransactions || [];
-
-      chartData = xpTransactions.map((item) => {
-      const parts = item.path.split("/");
-      const projectName = parts[parts.length - 1] || "project";
-
-        return {
-            name: projectName,
-            amount: item.amount,
-        };
-        });
-        
-        console.log("CHART DATA:", chartData);   
-
-
-      const xpTimeline = data?.xpTimeline || [];
-      const monthlyXP = {};
-
-        xpTimeline.forEach((item) => {
-        const date = new Date(item.createdAt);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-
-        if (!monthlyXP[key]) {
-            monthlyXP[key] = 0;
-        }
-        monthlyXP[key] += item.amount;
-        });
-
-      
-        const dates = xpTimeline.map(item => new Date(item.createdAt));
-
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
-
-    
-        const filledMonths = [];
-
-        let current = new Date(minDate.getFullYear(), 5, 1);
-
-        while (current <= maxDate) {
-        const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
-
-        filledMonths.push({
-            label: key,
-            amount: monthlyXP[key] || 0 
-        });
-
-     
-        current.setMonth(current.getMonth() + 1);
-        }
-
-
-        timelineData = filledMonths.map((item, index) => ({
-        ...item,
-        index
-        }));
-
-        console.log("TIMELINE DATA:", timelineData);
-
-      const skillsData = data?.skills || [];
-
-      const skillMap = {};
-
-      skillsData.forEach(skill => {
-        const name = skill.type.replace("skill_", "");
-
-        if (!skillMap[name] || skill.amount > skillMap[name]) {
-          skillMap[name] = skill.amount;
-        }
-      });
-
-
-      const finalSkills = Object.entries(skillMap).map(([name, amount]) => ({
-        name,
-        amount
-      }));
-
-
-      finalSkills.sort((a, b) => b.amount - a.amount);
-
-
-      topSkills = finalSkills.slice(0, 6);
-
-      console.log("FINAL SKILLS:", topSkills);
-
-
-
-    } catch (err) {
+    topSkills = mapTopSkills(data?.skills || []);
+    console.log("FINAL SKILLS:", topSkills);
+  } catch (err) {
     console.log("GraphQL error:", err);
-    }
+  }
 
- app.innerHTML = `
-  <main class="profile-page">
-    <section class="profile-shell">
-      <header class="profile-header">
-        <div class="profile-header-text">
-          <h1 class="profile-title">GraphQL Profile</h1>
-          <p class="profile-subtitle">You are logged in successfully</p>
-        </div>
+  app.innerHTML = profileTemplate({
+    user,
+    totalXP,
+    level,
+    auditRatio,
+    chartData,
+    timelineData,
+    topSkills,
+  });
 
-        <button class="logout-btn" id="logout-btn">Logout</button>
-      </header>
+  const radarChart = document.getElementById("radar-chart");
+  renderRadarChart(radarChart, topSkills);
 
-      <section class="profile-placeholder">
-        <h2>Profile Dashboard</h2>
-
-        <section class="profile-dashboard">
-
-          <div class="profile-user-info">
-            <p><strong>User ID:</strong> ${user?.id ?? "N/A"}</p>
-            <p><strong>Username:</strong> ${user?.login ?? "N/A"}</p>
-          </div>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <p class="stat-label">XP</p>
-              <h3 class="stat-value">${formatXP(totalXP)}</h3>
-            </div>
-
-            <div class="stat-card">
-              <p class="stat-label">Level</p>
-              <h3 class="stat-value">${level}</h3>
-            </div>
-
-            <div class="stat-card">
-              <p class="stat-label">Audit Ratio</p>
-              <h3 class="stat-value">${auditRatio}</h3>
-            </div>
-          </div>
-
-          <section class="chart-card">
-            <div class="chart-card-header">
-              <h2 class="chart-title">XP by Project</h2>
-              <p class="chart-subtitle">Top XP transactions</p>
-            </div>
-
-            ${generateBarChart(chartData)}
-          </section>
-
-          <section class="chart-card">
-            <div class="chart-card-header">
-              <h2 class="chart-title">XP Over Time</h2>
-              <p class="chart-subtitle">Your progress timeline</p>
-            </div>
-
-            ${generateLineChart(timelineData)}
-          </section>
-
-          <section class="chart-card">
-            <div class="chart-card-header">
-              <h2 class="chart-title">Top Skills</h2>
-              <p class="chart-subtitle">Highest skill values</p>
-            </div>
-            <div id="radar-chart"></div> 
-            <div class="skills-list">
-              ${topSkills.map(skill => `
-                <div class="skill-item">
-                  <span class="skill-name">${skill.name}</span>
-                  <span class="skill-value">${skill.amount}</span>
-                </div>
-              `).join("")}
-            </div>
-
-           
-
-          </section>
-
-        </section>
-      </section>
-    </section>
-  </main>
-`;
-
-const labels = topSkills.map(skill => skill.name);
-const values = topSkills.map(skill => skill.amount);
-
-const radarChart = document.getElementById("radar-chart");
-
-const size = 500;
-const centerX = size / 2;
-const centerY = size / 2;
-const radius = 130;
-
-let axes = "";
-let labelsText = "";
-let points = "";
-let circles = "";
-
-for (let i = 0; i < labels.length; i++) {
-  const angle = (-Math.PI / 2) + (2 * Math.PI * i / labels.length);
-
-  const x = centerX + radius * Math.cos(angle);
-  const y = centerY + radius * Math.sin(angle);
-
-  axes += `
-    <line
-      x1="${centerX}"
-      y1="${centerY}"
-      x2="${x}"
-      y2="${y}"
-      stroke="rgba(255,255,255,0.2)"
-      stroke-width="1.5"
-    />
-  `;
-
-  const labelOffset = 25;
-
-const labelX = centerX + (radius + labelOffset) * Math.cos(angle);
-const labelY = centerY + (radius + labelOffset) * Math.sin(angle);
-
-labelsText += `
-  <text
-    x="${labelX}"
-    y="${labelY}"
-    fill="white"
-    font-size="14"
-    text-anchor="middle"
-    dominant-baseline="middle"
-  >
-    ${labels[i]}
-  </text>
-`;
-
-const value = values[i];
-const maxValue = 100; 
-const scaledRadius = (value / maxValue) * radius;
-
-const pointX = centerX + scaledRadius * Math.cos(angle);
-const pointY = centerY + scaledRadius * Math.sin(angle);
-
-points += `${pointX},${pointY} `;
-}
-
-const levels = 5;
-
-for (let i = 1; i <= levels; i++) {
-  const r = (radius / levels) * i;
-
-  circles += `
-    <circle
-      cx="${centerX}"
-      cy="${centerY}"
-      r="${r}"
-      fill="none"
-      stroke="rgba(255,255,255,0.08)"
-      stroke-width="1"
-    />
-  `;
-}
-
-radarChart.innerHTML = `
-  <svg viewBox="0 0 ${size} ${size}" class="radar-svg">
-    
-    ${circles}  
-
-    ${axes}
-
-    <polygon
-      points="${points}"
-      fill="rgba(168, 139, 250, 0.4)"
-      stroke="#a78bfa"
-      stroke-width="2"
-    />
-
-    ${labelsText}
-
-    <circle cx="${centerX}" cy="${centerY}" r="4" fill="white" />
-  </svg>
-`;
-
-console.log("LABELS:", labels);
-console.log("VALUES:", values);
   const logoutBtn = document.getElementById("logout-btn");
 
   logoutBtn.addEventListener("click", () => {
