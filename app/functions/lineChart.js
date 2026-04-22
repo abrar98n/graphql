@@ -35,21 +35,42 @@ export function generateLineChart(data) {
     return `<circle cx="${x}" cy="${y}" r="4" fill="#a5b4fc" />`;
   }).join("");
 
-  const labels = data.map((item, i) => {
-    const x = paddingLeft + i * stepX;
+//   const labels = data.map((item, i) => {
+//     const x = paddingLeft + i * stepX;
 
-    return `
-      <text
-        x="${x}"
-        y="${height - 10}"
-        text-anchor="middle"
-        font-size="10"
-        fill="#98a2c3"
-      >
-        ${item.label}
-      </text>
-    `;
-  }).join("");
+//     return `
+//       <text
+//         x="${x}"
+//         y="${height - 10}"
+//         text-anchor="middle"
+//         font-size="10"
+//         fill="#98a2c3"
+//       >
+//         ${item.label}
+//       </text>
+//     `;
+//   }).join("");
+
+const labels = data.map((item, i) => {
+  const x = paddingLeft + i * stepX;
+  const [year, month] = item.label.split("-");
+
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthName = months[parseInt(month) - 1];
+
+  return `
+    <text
+      x="${x}"
+      y="${height - 18}"
+      text-anchor="middle"
+      font-size="10"
+      fill="#98a2c3"
+    >
+      <tspan x="${x}" dy="0">${monthName}</tspan>
+      <tspan x="${x}" dy="12">${year}</tspan>
+    </text>
+  `;
+}).join("");
 
   let grid = "";
   let yLabels = "";

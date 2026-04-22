@@ -117,10 +117,18 @@ export async function renderProfile(app, renderApp) {
   const radarChart = document.getElementById("radar-chart");
   renderRadarChart(radarChart, topSkills);
 
-  const logoutBtn = document.getElementById("logout-btn");
+const logoutBtn = document.getElementById("logout-btn");
 
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("token");
+logoutBtn.addEventListener("click", () => {
+
+
+  logoutBtn.classList.add("loading");
+  logoutBtn.disabled = true;
+  setTimeout(() => {
+
+  localStorage.removeItem("token");
     renderApp();
-  });
+
+  }, 500);
+});
 }

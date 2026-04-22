@@ -1,5 +1,18 @@
 import { formatXP } from "./formatXP.js";
 
+function formatLabel(text, x) {
+  if (text.length > 12) {
+    text = text.slice(0, 12) + "...";
+  }
+
+  const words = text.split("-");
+
+  return `
+    <tspan x="${x}" dy="0">${words[0] || ""}</tspan>
+    <tspan x="${x}" dy="12">${words[1] || ""}</tspan>
+  `;
+}
+
 export function generateBarChart(data) {
   if (!data.length) {
     return `<p class="empty-chart-text">No chart data available.</p>`;
@@ -29,12 +42,12 @@ export function generateBarChart(data) {
         />
         <text
           x="${x + barWidth / 2}"
-          y="${height - 10}"
+          y="${height - 18}"
           text-anchor="middle"
-          font-size="11"
+          font-size="10"
           fill="#98a2c3"
         >
-          ${item.name}
+          ${formatLabel(item.name, x + barWidth / 2)}
         </text>
         <text
           x="${x + barWidth / 2}"

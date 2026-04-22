@@ -217,3 +217,19 @@
     max-width: 300px;
   }
 }
+
+.logout-btn.loading {
+  opacity: 0.7;
+}
+
+.logout-btn.loading::after {
+   content: "..."; 
+  margin-left: 8px;
+}
+
+.chart-label {
+  max-width: 80px;       
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

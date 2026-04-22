@@ -35,7 +35,7 @@ export const PROFILE_QUERY = `
       path: { _ilike: "%bh-module%" }
     }
     order_by: { amount: desc }
-    limit: 7
+    limit: 8
   ) {
     amount
     path
