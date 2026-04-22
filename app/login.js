@@ -34,9 +34,8 @@ app.innerHTML = `
           />
         </div>
 
-        <button type="submit" class="login-btn">Login</button>
-
-       <p class="login-error" id="login-error"></p>
+     <p class="login-error" id="login-error"></p>
+<button type="submit" class="login-btn">Login</button>
       </form>
     </section>
   </main>
@@ -50,8 +49,9 @@ form.addEventListener("submit", async (e) => {
   const identifier = document.getElementById("identifier").value;
   const password = document.getElementById("password").value;
 
-  //hide error
-  errorMsg.style.display = "none";
+errorMsg.textContent = "";
+errorMsg.style.display = "none";
+
 
   try {
     //transform to base64
@@ -65,17 +65,21 @@ form.addEventListener("submit", async (e) => {
     });
 
     if (!res.ok) {
-      throw new Error("Login failed");
-    }
+  errorMsg.textContent = "Invalid username/email or password.";
+  errorMsg.style.display = "block";
+  return;
+}
 
-    const data = await res.json();
-    console.log("JWT:", data);
-    // save token
-    localStorage.setItem("token", data);
+ const token = await res.text();
+const cleanToken = token.replace(/^"|"$/g, "");
+
+console.log("JWT:", cleanToken);
+localStorage.setItem("token", cleanToken);
     
     renderApp();
 
   } catch (err) {
+    errorMsg.textContent = "Invalid username/email or password.";
     errorMsg.style.display = "block";
   }
 });
