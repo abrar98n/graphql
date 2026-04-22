@@ -40,7 +40,7 @@ export const PROFILE_QUERY = `
   xpTransactions: transaction(
     where: { type: { _eq: "xp" } }
     order_by: { amount: desc }
-    limit: 10
+    limit: 8
   ) {
     amount
     path
