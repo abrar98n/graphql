@@ -34,10 +34,18 @@ export async function renderProfile(app, renderApp) {
     const result = await res.json();
     const data = result.data;
 
+    //check
+    console.log("USER RAW:", data?.user?.[0]);
+    console.log("LEVEL RAW:", data?.level);
+    console.log("XP TOTAL RAW:", data?.transaction_aggregate);
+    console.log("XP TOTAL SUM AMOUNT:", data?.transaction_aggregate?.aggregate?.sum?.amount);
+    console.log("XP TRANSACTIONS FULL:", data?.xpTransactions);
+    console.log("XP TRANSACTIONS SUM:",(data?.xpTransactions || []).reduce((sum, item) => sum + (item.amount || 0), 0));
+
     console.log("GRAPHQL DATA:", data);
 
     user = data?.user?.[0];
-    totalXP = data?.transaction_aggregate?.aggregate?.sum?.amount || 0;
+    totalXP = (data?.xpTransactions || []).reduce((sum, item) => sum + (item.amount || 0),0);
     level = data?.level?.[0]?.amount || 0;
     auditUp = data?.auditRatio?.aggregate?.sum?.amount ?? 0;
     auditDown = data?.auditDown?.aggregate?.sum?.amount ?? 0;
