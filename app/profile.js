@@ -1,3 +1,10 @@
+function formatXP(num) {
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(".0", "") + " KB";
+  }
+  return num + " B";
+}
+
 function generateBarChart(data) {
   if (!data.length) {
     return `<p class="empty-chart-text">No chart data available.</p>`;
@@ -42,7 +49,7 @@ function generateBarChart(data) {
             font-size="11"
             fill="#f5f7ff"
           >
-            ${item.amount}
+            ${formatXP(item.amount)}
           </text>
         </g>
       `;
@@ -407,7 +414,7 @@ level: transaction(
           <div class="stats-grid">
             <div class="stat-card">
               <p class="stat-label">XP</p>
-              <h3 class="stat-value">${totalXP}</h3>
+              <h3 class="stat-value">${formatXP(totalXP)}</h3>
             </div>
 
             <div class="stat-card">
@@ -444,7 +451,7 @@ level: transaction(
               <h2 class="chart-title">Top Skills</h2>
               <p class="chart-subtitle">Highest skill values</p>
             </div>
-
+            <div id="radar-chart"></div> 
             <div class="skills-list">
               ${topSkills.map(skill => `
                 <div class="skill-item">
@@ -453,6 +460,9 @@ level: transaction(
                 </div>
               `).join("")}
             </div>
+
+           
+
           </section>
 
         </section>
@@ -460,6 +470,106 @@ level: transaction(
     </section>
   </main>
 `;
+
+const labels = topSkills.map(skill => skill.name);
+const values = topSkills.map(skill => skill.amount);
+
+const radarChart = document.getElementById("radar-chart");
+
+const size = 500;
+const centerX = size / 2;
+const centerY = size / 2;
+const radius = 130;
+
+let axes = "";
+let labelsText = "";
+let points = "";
+let circles = "";
+
+for (let i = 0; i < labels.length; i++) {
+  const angle = (-Math.PI / 2) + (2 * Math.PI * i / labels.length);
+
+  const x = centerX + radius * Math.cos(angle);
+  const y = centerY + radius * Math.sin(angle);
+
+  axes += `
+    <line
+      x1="${centerX}"
+      y1="${centerY}"
+      x2="${x}"
+      y2="${y}"
+      stroke="rgba(255,255,255,0.2)"
+      stroke-width="1.5"
+    />
+  `;
+
+  const labelOffset = 25;
+
+const labelX = centerX + (radius + labelOffset) * Math.cos(angle);
+const labelY = centerY + (radius + labelOffset) * Math.sin(angle);
+
+labelsText += `
+  <text
+    x="${labelX}"
+    y="${labelY}"
+    fill="white"
+    font-size="14"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >
+    ${labels[i]}
+  </text>
+`;
+
+const value = values[i];
+const maxValue = 100; 
+const scaledRadius = (value / maxValue) * radius;
+
+const pointX = centerX + scaledRadius * Math.cos(angle);
+const pointY = centerY + scaledRadius * Math.sin(angle);
+
+points += `${pointX},${pointY} `;
+}
+
+const levels = 5;
+
+for (let i = 1; i <= levels; i++) {
+  const r = (radius / levels) * i;
+
+  circles += `
+    <circle
+      cx="${centerX}"
+      cy="${centerY}"
+      r="${r}"
+      fill="none"
+      stroke="rgba(255,255,255,0.08)"
+      stroke-width="1"
+    />
+  `;
+}
+
+radarChart.innerHTML = `
+  <svg viewBox="0 0 ${size} ${size}" class="radar-svg">
+    
+    ${circles}  
+
+    ${axes}
+
+    <polygon
+      points="${points}"
+      fill="rgba(168, 139, 250, 0.4)"
+      stroke="#a78bfa"
+      stroke-width="2"
+    />
+
+    ${labelsText}
+
+    <circle cx="${centerX}" cy="${centerY}" r="4" fill="white" />
+  </svg>
+`;
+
+console.log("LABELS:", labels);
+console.log("VALUES:", values);
   const logoutBtn = document.getElementById("logout-btn");
 
   logoutBtn.addEventListener("click", () => {

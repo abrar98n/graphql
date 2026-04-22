@@ -159,8 +159,8 @@
 
 
 .skills-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); 
   gap: 12px;
 }
 
@@ -183,4 +183,37 @@
 .skill-value {
   color: var(--text-main);
   font-weight: 600;
+}
+
+
+@media (max-width: 900px) {
+  .skills-list {
+    grid-template-columns: repeat(2, 1fr); 
+  }
+}
+
+
+@media (max-width: 600px) {
+  .skills-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+#radar-chart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.radar-svg {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+}
+
+@media (max-width: 600px) {
+  .radar-svg {
+    max-width: 300px;
+  }
 }
