@@ -34,18 +34,59 @@ export async function renderProfile(app, renderApp) {
     const result = await res.json();
     const data = result.data;
 
-    //check
-    console.log("USER RAW:", data?.user?.[0]);
-    console.log("LEVEL RAW:", data?.level);
-    console.log("XP TOTAL RAW:", data?.transaction_aggregate);
-    console.log("XP TOTAL SUM AMOUNT:", data?.transaction_aggregate?.aggregate?.sum?.amount);
-    console.log("XP TRANSACTIONS FULL:", data?.xpTransactions);
-    console.log("XP TRANSACTIONS SUM:",(data?.xpTransactions || []).reduce((sum, item) => sum + (item.amount || 0), 0));
+    const allXP = data?.allXpTransactions || [];
+    const groupedProjects = {};
+
+    allXP.forEach((item) => {
+      let projectName = item.path.split("/").pop();
+      if (item.path.includes("piscine-js")) {
+        projectName = "piscine-js";
+      }
+
+      if (!groupedProjects[projectName]) {
+        groupedProjects[projectName] = [];
+      }
+
+      groupedProjects[projectName].push(item.amount);
+    });
+
+    console.log("GROUPED PROJECTS:", groupedProjects);
+
+    const projectTotals = Object.entries(groupedProjects).map(([project, amounts]) => ({
+      project,
+      amount: Math.max(...amounts),
+    }));
+
+    console.table(projectTotals);
+
+    console.log("PROJECT TOTALS:", projectTotals);
+
+    console.log(
+      "DEDUPED TOTAL XP:",
+      projectTotals.reduce((sum, item) => sum + item.amount, 0)
+    );
+
+    console.log("ALL XP TRANSACTIONS:", data?.allXpTransactions);
+
+    console.log(
+      "ALL XP SUM:",
+      (data?.allXpTransactions || []).reduce((sum, item) => sum + (item.amount || 0), 0)
+    );
+
+    console.log(
+      "ALL XP PATHS:",
+      (data?.allXpTransactions || []).map(item => ({
+        amount: item.amount,
+        path: item.path
+      }))
+    );
 
     console.log("GRAPHQL DATA:", data);
 
     user = data?.user?.[0];
-    totalXP = (data?.xpTransactions || []).reduce((sum, item) => sum + (item.amount || 0),0);
+  totalXP = Math.round(
+  projectTotals.reduce((sum, item) => sum + item.amount, 0)
+);
     level = data?.level?.[0]?.amount || 0;
     auditUp = data?.auditRatio?.aggregate?.sum?.amount ?? 0;
     auditDown = data?.auditDown?.aggregate?.sum?.amount ?? 0;

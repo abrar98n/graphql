@@ -5,14 +5,6 @@ export const PROFILE_QUERY = `
     login
   }
 
-  transaction_aggregate(where: { type: { _eq: "xp" } }) {
-    aggregate {
-      sum {
-        amount
-      }
-    }
-  }
-
   level: transaction(
     where: { type: { _eq: "level" } }
     order_by: { amount: desc }
@@ -38,9 +30,38 @@ export const PROFILE_QUERY = `
   }
 
   xpTransactions: transaction(
-    where: { type: { _eq: "xp" } }
+    where: {
+      type: { _eq: "xp" }
+      path: { _ilike: "%bh-module%" }
+    }
     order_by: { amount: desc }
-    limit: 8
+    limit: 7
+  ) {
+    amount
+    path
+    createdAt
+    type
+  }
+
+  allXpTransactions: transaction(
+    where: {
+      type: { _eq: "xp" }
+      path: { _ilike: "%bh-module%" }
+    }
+    order_by: { createdAt: desc }
+  ) {
+    amount
+    path
+    createdAt
+    type
+  }
+
+  allProjectsXP: transaction(
+    where: {
+      type: { _eq: "xp" }
+      path: { _ilike: "%bh-module%" }
+    }
+    order_by: { amount: desc }
   ) {
     amount
     path
