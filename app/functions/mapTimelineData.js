@@ -15,11 +15,12 @@ export function mapTimelineData(xpTimeline = []) {
   });
 
   const dates = xpTimeline.map((item) => new Date(item.createdAt));
-  const minDate = new Date(Math.min(...dates));
   const maxDate = new Date(Math.max(...dates));
 
   const filledMonths = [];
-  let current = new Date(minDate.getFullYear(), 5, 1);
+
+  const startDate = new Date(maxDate.getFullYear(), maxDate.getMonth() - 11, 1);
+  let current = new Date(startDate);
 
   while (current <= maxDate) {
     const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
