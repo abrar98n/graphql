@@ -155,3 +155,32 @@
   color: var(--text-soft);
   font-size: 0.9rem;
 }
+
+
+
+.skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skill-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #0f1630 0%, #0c1228 100%);
+}
+
+.skill-name {
+  text-transform: capitalize;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.skill-value {
+  color: var(--text-main);
+  font-weight: 600;
+}

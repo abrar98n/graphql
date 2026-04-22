@@ -243,7 +243,16 @@ level: transaction(
     amount
     createdAt
     }
+
+    skills: transaction(
+    where: { type: { _like: "skill_%" } }
+    order_by: { amount: desc }
+    ) {
+    type
+    amount
     }
+    
+  }
 `;
 
     let user = null;
@@ -254,6 +263,7 @@ level: transaction(
     let auditRatio = null;
     let chartData = [];
     let timelineData = [];
+    let topSkills = [];
 
 
     try {
@@ -268,17 +278,19 @@ level: transaction(
 
 
 
-    const data = await res.json();
-    console.log("GRAPHQL DATA:", data);
+      const result = await res.json();
+      const data = result.data;
 
-    user = data?.data?.user?.[0];
-    totalXP = data?.data?.transaction_aggregate?.aggregate?.sum?.amount || 0;
-    level = data?.data?.level?.[0]?.amount || 0;
-    auditUp = data?.data?.auditRatio?.aggregate?.sum?.amount || 0;
-    auditDown = data?.data?.auditDown?.aggregate?.sum?.amount || 0;
-    auditRatio = auditDown ? (auditUp / auditDown).toFixed(2) : 0;
+      console.log("GRAPHQL DATA:", data);
 
-    const xpTransactions = data?.data?.xpTransactions || [];
+      user = data?.user?.[0];
+      totalXP = data?.transaction_aggregate?.aggregate?.sum?.amount || 0;
+      level = data?.level?.[0]?.amount || 0;
+      auditUp = data?.auditRatio?.aggregate?.sum?.amount ?? 0;
+      auditDown = data?.auditDown?.aggregate?.sum?.amount ?? 0;
+      auditRatio = auditDown > 0 ? (auditUp / auditDown).toFixed(2) : "0.00";
+
+      const xpTransactions = data?.xpTransactions || [];
 
       chartData = xpTransactions.map((item) => {
       const parts = item.path.split("/");
@@ -293,31 +305,27 @@ level: transaction(
         console.log("CHART DATA:", chartData);   
 
 
-       const xpTimeline = data?.data?.xpTimeline || [];
-
-        // 1) Group XP values by month (format: YYYY-MM)
-        const monthlyXP = {};
+      const xpTimeline = data?.xpTimeline || [];
+      const monthlyXP = {};
 
         xpTimeline.forEach((item) => {
         const date = new Date(item.createdAt);
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
-        // Initialize the month if it doesn't exist
+
         if (!monthlyXP[key]) {
             monthlyXP[key] = 0;
         }
-
-        // Accumulate XP for that month
         monthlyXP[key] += item.amount;
         });
 
-        // 2) Determine the earliest and latest dates in the dataset
+      
         const dates = xpTimeline.map(item => new Date(item.createdAt));
 
         const minDate = new Date(Math.min(...dates));
         const maxDate = new Date(Math.max(...dates));
 
-        // 3) fill missing months with 0
+    
         const filledMonths = [];
 
         let current = new Date(minDate.getFullYear(), 5, 1);
@@ -327,14 +335,14 @@ level: transaction(
 
         filledMonths.push({
             label: key,
-            amount: monthlyXP[key] || 0 // Default to 0 if no data exists
+            amount: monthlyXP[key] || 0 
         });
 
-        // Move to the next month
+     
         current.setMonth(current.getMonth() + 1);
         }
 
-        // 4) Transform data into chart-friendly format
+
         timelineData = filledMonths.map((item, index) => ({
         ...item,
         index
@@ -342,6 +350,31 @@ level: transaction(
 
         console.log("TIMELINE DATA:", timelineData);
 
+      const skillsData = data?.skills || [];
+
+      const skillMap = {};
+
+      skillsData.forEach(skill => {
+        const name = skill.type.replace("skill_", "");
+
+        if (!skillMap[name] || skill.amount > skillMap[name]) {
+          skillMap[name] = skill.amount;
+        }
+      });
+
+
+      const finalSkills = Object.entries(skillMap).map(([name, amount]) => ({
+        name,
+        amount
+      }));
+
+
+      finalSkills.sort((a, b) => b.amount - a.amount);
+
+
+      topSkills = finalSkills.slice(0, 6);
+
+      console.log("FINAL SKILLS:", topSkills);
 
 
 
@@ -349,75 +382,84 @@ level: transaction(
     console.log("GraphQL error:", err);
     }
 
+ app.innerHTML = `
+  <main class="profile-page">
+    <section class="profile-shell">
+      <header class="profile-header">
+        <div class="profile-header-text">
+          <h1 class="profile-title">GraphQL Profile</h1>
+          <p class="profile-subtitle">You are logged in successfully</p>
+        </div>
 
-  app.innerHTML = `
-    <main class="profile-page">
-      <section class="profile-shell">
-        <header class="profile-header">
-          <div class="profile-header-text">
-            <h1 class="profile-title">GraphQL Profile</h1>
-            <p class="profile-subtitle">You are logged in successfully</p>
+        <button class="logout-btn" id="logout-btn">Logout</button>
+      </header>
+
+      <section class="profile-placeholder">
+        <h2>Profile Dashboard</h2>
+
+        <section class="profile-dashboard">
+
+          <div class="profile-user-info">
+            <p><strong>User ID:</strong> ${user?.id ?? "N/A"}</p>
+            <p><strong>Login:</strong> ${user?.login ?? "N/A"}</p>
           </div>
 
-          <button class="logout-btn" id="logout-btn">Logout</button>
-        </header>
-
-        <section class="profile-placeholder">
-          <h2>Profile Dashboard</h2>
-
-            <section class="profile-dashboard">
-
-            <div class="profile-user-info">
-                <p><strong>User ID:</strong> ${user?.id ?? "N/A"}</p>
-                <p><strong>Login:</strong> ${user?.login ?? "N/A"}</p>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <p class="stat-label">XP</p>
+              <h3 class="stat-value">${totalXP}</h3>
             </div>
 
-            <div class="stats-grid">
-
-                <div class="stat-card">
-                <p class="stat-label">XP</p>
-                <h3 class="stat-value">${totalXP}</h3>
-                </div>
-
-                <div class="stat-card">
-                <p class="stat-label">Level</p>
-                <h3 class="stat-value">${level}</h3>
-                </div>
-
-                <div class="stat-card">
-                <p class="stat-label">Audit Ratio</p>
-                <h3 class="stat-value">${auditRatio}</h3>
-                </div>
-
+            <div class="stat-card">
+              <p class="stat-label">Level</p>
+              <h3 class="stat-value">${level}</h3>
             </div>
 
-            <section class="chart-card">
+            <div class="stat-card">
+              <p class="stat-label">Audit Ratio</p>
+              <h3 class="stat-value">${auditRatio}</h3>
+            </div>
+          </div>
 
-                <div class="chart-card-header">
-                    <h2 class="chart-title">XP by Project</h2>
-                    <p class="chart-subtitle">Top XP transactions</p>
+          <section class="chart-card">
+            <div class="chart-card-header">
+              <h2 class="chart-title">XP by Project</h2>
+              <p class="chart-subtitle">Top XP transactions</p>
+            </div>
+
+            ${generateBarChart(chartData)}
+          </section>
+
+          <section class="chart-card">
+            <div class="chart-card-header">
+              <h2 class="chart-title">XP Over Time</h2>
+              <p class="chart-subtitle">Your progress timeline</p>
+            </div>
+
+            ${generateLineChart(timelineData)}
+          </section>
+
+          <section class="chart-card">
+            <div class="chart-card-header">
+              <h2 class="chart-title">Top Skills</h2>
+              <p class="chart-subtitle">Highest skill values</p>
+            </div>
+
+            <div class="skills-list">
+              ${topSkills.map(skill => `
+                <div class="skill-item">
+                  <span class="skill-name">${skill.name}</span>
+                  <span class="skill-value">${skill.amount}</span>
                 </div>
-
-                ${generateBarChart(chartData)}
-
-            </section>
-
-            <section class="chart-card">
-                <div class="chart-card-header">
-                    <h2 class="chart-title">XP Over Time</h2>
-                    <p class="chart-subtitle">Your progress timeline</p>
-                </div>
-
-                ${generateLineChart(timelineData)}
-            </section>
-
-</section>
+              `).join("")}
+            </div>
+          </section>
 
         </section>
       </section>
-    </main>
-  `;
-
+    </section>
+  </main>
+`;
   const logoutBtn = document.getElementById("logout-btn");
 
   logoutBtn.addEventListener("click", () => {
