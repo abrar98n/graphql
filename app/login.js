@@ -85,7 +85,7 @@ loginBtn.disabled = true;
  const token = await res.text();
 const cleanToken = token.replace(/^"|"$/g, "");
 
-console.log("JWT:", cleanToken);
+// console.log("JWT:", cleanToken);
 localStorage.setItem("token", cleanToken);
     
     renderApp();
